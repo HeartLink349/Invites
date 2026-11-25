@@ -1,0 +1,672 @@
+/* ==========================================================================
+   MOSTAFA & BASMALA — STANDALONE INTERACTIVE WEDDING INVITATION ENGINE
+   - Single editable WEDDING_CONFIG for names, date, venue, photo & WhatsApp
+   - Full-screen 5-step 3D champagne envelope unseal -> flap open -> card rise -> unveil
+   - Synchronized 1-second real-time countdown with zero-negative celebration banner
+   - Real .ics Save-the-Date calendar download & Google Maps directions
+   - Honest RSVP form (local preview save + pre-filled WhatsApp delivery)
+   - Full English / Arabic (LTR <-> RTL) bilingual experience
+   ========================================================================== */
+(function () {
+  "use strict";
+
+  /* ========================================================================
+     1. EDITABLE WEDDING CONFIGURATION
+     ======================================================================== */
+  const WEDDING_CONFIG = {
+    coupleNames: "Mostafa & Basmala",
+    weddingDateISO: "2027-08-21T19:00:00+02:00",
+    weddingEndISO: "2027-08-22T01:00:00+02:00",
+    couplePhoto: "assets/couple-portrait.jpg",
+
+    en: {
+      dateUpper: "SATURDAY, AUGUST 21, 2027",
+      dateShort: "AUGUST 21, 2027",
+      dateDisplay: "Saturday, August 21, 2027",
+      timeDisplay: "7:00 PM",
+      dateTimeFull: "Saturday, August 21, 2027 • 7:00 PM",
+      venueName: "Royal Palace Hall",
+      venueAddressShort: "Nile Corniche, Garden City",
+      cityCountry: "Cairo, Egypt",
+      venueFullAddress: "Royal Palace Hall, Nile Corniche, Garden City, Cairo, Egypt",
+      sched1Time: "7:00 PM",
+      sched2Time: "8:00 PM",
+      sched3Time: "9:30 PM"
+    },
+    ar: {
+      dateUpper: "السبت، ٢١ أغسطس ٢٠٢٧",
+      dateShort: "٢١ أغسطس ٢٠٢٧",
+      dateDisplay: "السبت، ٢١ أغسطس ٢٠٢٧",
+      timeDisplay: "٧:٠٠ مساءً",
+      dateTimeFull: "السبت، ٢١ أغسطس ٢٠٢٧ • ٧:٠٠ مساءً",
+      venueName: "قاعة رويال بالاس",
+      venueAddressShort: "كورنيش النيل، جاردن سيتي",
+      cityCountry: "القاهرة، مصر",
+      venueFullAddress: "قاعة رويال بالاس، كورنيش النيل، جاردن سيتي، القاهرة، مصر",
+      sched1Time: "٧:٠٠ مساءً",
+      sched2Time: "٨:٠٠ مساءً",
+      sched3Time: "٩:٣٠ مساءً"
+    },
+
+    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Royal+Palace+Hall+Cairo+Egypt",
+    rsvpWhatsAppNumber: "201000000000" // Replace with couple's WhatsApp number (country code, no +)
+  };
+
+  let currentLang = "en";
+  let envelopeTimers = [];
+  let toastTimer = null;
+
+  /* ========================================================================
+     2. UTILITIES (Toast & Clipboard)
+     ======================================================================== */
+  const toastEl = document.getElementById("invToast");
+  function showToast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 3000);
+  }
+
+  function copyToClipboard(text, successMsg) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showToast(successMsg);
+      }).catch(function () {
+        fallbackCopy(text, successMsg);
+      });
+    } else {
+      fallbackCopy(text, successMsg);
+    }
+  }
+
+  function fallbackCopy(text, successMsg) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (_) {}
+    document.body.removeChild(ta);
+    showToast(successMsg);
+  }
+
+  /* ========================================================================
+     3. APPLY WEDDING CONFIG TO DOM
+     ======================================================================== */
+  function applyWeddingConfig() {
+    const loc = WEDDING_CONFIG[currentLang] || WEDDING_CONFIG.en;
+    document.querySelectorAll("[data-cfg]").forEach(function (el) {
+      const key = el.dataset.cfg;
+      if (key === "coupleNames") el.textContent = WEDDING_CONFIG.coupleNames;
+      else if (loc[key]) el.textContent = loc[key];
+    });
+    document.querySelectorAll("[data-cfg-src]").forEach(function (img) {
+      const key = img.dataset.cfgSrc;
+      if (WEDDING_CONFIG[key]) img.src = WEDDING_CONFIG[key];
+    });
+    const mapsBtn = document.getElementById("btnGoogleMaps");
+    if (mapsBtn) mapsBtn.href = WEDDING_CONFIG.googleMapsUrl;
+  }
+
+  /* ========================================================================
+     4. FULL-SCREEN 5-STEP 3D ENVELOPE OPENING & REPLAY CHOREOGRAPHY
+     ======================================================================== */
+  const envelopeEntrance = document.getElementById("envelopeEntrance");
+  const invitationExperience = document.getElementById("invitationExperience");
+  const goldWaxSeal = document.getElementById("goldWaxSeal");
+  const btnOpenCue = document.getElementById("btnOpenCue");
+  const btnHeaderReplay = document.getElementById("btnHeaderReplay");
+  const btnDrawerReplay = document.getElementById("btnDrawerReplay");
+  const btnFinaleReplay = document.getElementById("btnFinaleReplay");
+
+  function clearTimers() {
+    envelopeTimers.forEach(function (id) { clearTimeout(id); });
+    envelopeTimers = [];
+  }
+
+  function openEnvelope() {
+    if (!envelopeEntrance) return;
+    if (envelopeEntrance.dataset.state !== "closed") return;
+    clearTimers();
+
+    // 1. Gold wax seal smoothly tilts, lifts & unseals
+    envelopeEntrance.dataset.state = "unsealing";
+
+    // 2. Top embossed triangular flap rotates open in 3D
+    envelopeTimers.push(setTimeout(function () {
+      envelopeEntrance.dataset.state = "opening";
+    }, 360));
+
+    // 3. Ivory cotton invitation card glides upward out of envelope pocket
+    envelopeTimers.push(setTimeout(function () {
+      envelopeEntrance.dataset.state = "rising";
+    }, 980));
+
+    // 4. Envelope cross-dissolves into the full interactive invitation experience
+    envelopeTimers.push(setTimeout(function () {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      envelopeEntrance.dataset.state = "exiting";
+      document.body.classList.remove("is-envelope-locked");
+      if (invitationExperience) {
+        invitationExperience.classList.add("is-revealed");
+        invitationExperience.setAttribute("aria-hidden", "false");
+      }
+    }, 1820));
+
+    // 5. Hide overlay completely after exit fade completes
+    envelopeTimers.push(setTimeout(function () {
+      envelopeEntrance.dataset.state = "hidden";
+    }, 2560));
+  }
+
+  function replayEnvelope() {
+    clearTimers();
+    const drawer = document.getElementById("invMobileDrawer");
+    const menuBtn = document.getElementById("btnInvMenu");
+    if (drawer) drawer.hidden = true;
+    if (menuBtn) menuBtn.setAttribute("aria-expanded", "false");
+
+    window.scrollTo({ top: 0, behavior: "instant" });
+    document.body.classList.add("is-envelope-locked");
+    if (invitationExperience) {
+      invitationExperience.classList.remove("is-revealed");
+      invitationExperience.setAttribute("aria-hidden", "true");
+    }
+    if (envelopeEntrance) {
+      envelopeEntrance.dataset.state = "closed";
+    }
+  }
+
+  if (goldWaxSeal) goldWaxSeal.addEventListener("click", openEnvelope);
+  if (btnOpenCue) btnOpenCue.addEventListener("click", openEnvelope);
+  if (btnHeaderReplay) btnHeaderReplay.addEventListener("click", replayEnvelope);
+  if (btnDrawerReplay) btnDrawerReplay.addEventListener("click", replayEnvelope);
+  if (btnFinaleReplay) btnFinaleReplay.addEventListener("click", replayEnvelope);
+
+  /* ========================================================================
+     5. HEADER SCROLL & MOBILE DRAWER
+     ======================================================================== */
+  const invHeader = document.querySelector(".inv-header");
+  function handleScroll() {
+    if (invHeader) invHeader.classList.toggle("is-scrolled", (window.scrollY || 0) > 24);
+  }
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  handleScroll();
+
+  const btnInvMenu = document.getElementById("btnInvMenu");
+  const invMobileDrawer = document.getElementById("invMobileDrawer");
+  if (btnInvMenu && invMobileDrawer) {
+    btnInvMenu.addEventListener("click", function () {
+      const open = invMobileDrawer.hidden;
+      invMobileDrawer.hidden = !open;
+      btnInvMenu.setAttribute("aria-expanded", String(open));
+    });
+    invMobileDrawer.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        invMobileDrawer.hidden = true;
+        btnInvMenu.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+
+  /* ========================================================================
+     6. SYNCHRONIZED 1-SECOND REAL-TIME COUNTDOWN (ZERO NEGATIVES)
+     ======================================================================== */
+  const targetTimestamp = new Date(WEDDING_CONFIG.weddingDateISO).getTime();
+  const mainCountdownGrid = document.getElementById("mainCountdownGrid");
+  const mainCelebrateCard = document.getElementById("mainCelebrateCard");
+  const coverCountdownGrid = document.getElementById("coverCountdownGrid");
+  const coverCelebrateMsg = document.getElementById("coverCelebrateMsg");
+
+  function pad2(num) {
+    return String(Math.max(0, Math.floor(num))).padStart(2, "0");
+  }
+
+  let lastSecondValue = null;
+
+  function updateCountdown() {
+    const diff = targetTimestamp - Date.now();
+
+    if (isNaN(targetTimestamp) || diff <= 0) {
+      if (mainCountdownGrid) mainCountdownGrid.hidden = true;
+      if (mainCelebrateCard) mainCelebrateCard.hidden = false;
+      if (coverCountdownGrid) coverCountdownGrid.hidden = true;
+      if (coverCelebrateMsg) coverCelebrateMsg.hidden = false;
+      return;
+    }
+
+    if (mainCountdownGrid) mainCountdownGrid.hidden = false;
+    if (mainCelebrateCard) mainCelebrateCard.hidden = true;
+    if (coverCountdownGrid) coverCountdownGrid.hidden = false;
+    if (coverCelebrateMsg) coverCelebrateMsg.hidden = true;
+
+    const totalSeconds = Math.floor(diff / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const values = {
+      days: String(days),
+      hours: pad2(hours),
+      minutes: pad2(minutes),
+      seconds: pad2(seconds)
+    };
+
+    document.querySelectorAll("[data-cd]").forEach(function (el) {
+      const unit = el.dataset.cd;
+      if (values[unit] !== undefined) el.textContent = values[unit];
+    });
+
+    if (lastSecondValue !== null && lastSecondValue !== seconds) {
+      const mainSec = mainCountdownGrid && mainCountdownGrid.querySelector('[data-cd="seconds"]');
+      if (mainSec) {
+        mainSec.classList.add("is-ticking");
+        setTimeout(function () { mainSec.classList.remove("is-ticking"); }, 180);
+      }
+    }
+    lastSecondValue = seconds;
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  /* Real RFC-5545 .ics Calendar Export */
+  function toIcsUtc(iso) {
+    return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  }
+
+  const btnDownloadCalendar = document.getElementById("btnDownloadCalendar");
+  if (btnDownloadCalendar) {
+    btnDownloadCalendar.addEventListener("click", function () {
+      const ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Mostafa & Basmala//Wedding Invitation//EN",
+        "BEGIN:VEVENT",
+        "UID:mostafa-basmala-wedding-2027@wedding-invite",
+        "DTSTAMP:" + toIcsUtc(new Date().toISOString()),
+        "DTSTART:" + toIcsUtc(WEDDING_CONFIG.weddingDateISO),
+        "DTEND:" + toIcsUtc(WEDDING_CONFIG.weddingEndISO),
+        "SUMMARY:" + WEDDING_CONFIG.coupleNames + " — Wedding Celebration",
+        "DESCRIPTION:Together with their families, " + WEDDING_CONFIG.coupleNames + " invite you to join them in celebrating their marriage.",
+        "LOCATION:" + WEDDING_CONFIG.en.venueFullAddress,
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].join("\r\n");
+
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Mostafa-and-Basmala-Wedding.ics";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      showToast(currentLang === "ar" ? "تم تحميل ملف التقويم بنجاح" : "Calendar invite (.ics) downloaded");
+    });
+  }
+
+  /* ========================================================================
+     7. COPY VENUE ADDRESS
+     ======================================================================== */
+  const btnCopyAddress = document.getElementById("btnCopyAddress");
+  if (btnCopyAddress) {
+    btnCopyAddress.addEventListener("click", function () {
+      const addr = (WEDDING_CONFIG[currentLang] || WEDDING_CONFIG.en).venueFullAddress;
+      copyToClipboard(addr, currentLang === "ar" ? "تم نسخ عنوان القاعة" : "Venue address copied to clipboard");
+    });
+  }
+
+  /* ========================================================================
+     8. INTERACTIVE HONEST RSVP FORM (Local Preview Save + WhatsApp Delivery)
+     ======================================================================== */
+  const RSVP_STORAGE_KEY = "mostafa_basmala_rsvp_v1";
+  const rsvpForm = document.getElementById("rsvpForm");
+  const guestNameInput = document.getElementById("guestName");
+  const guestNameError = document.getElementById("guestNameError");
+  const guestCountField = document.getElementById("guestCountField");
+  const guestCountInput = document.getElementById("guestCount");
+  const guestNoteInput = document.getElementById("guestNote");
+  const btnDecGuests = document.getElementById("btnDecGuests");
+  const btnIncGuests = document.getElementById("btnIncGuests");
+  const rsvpConfirmation = document.getElementById("rsvpConfirmation");
+  const rsvpConfirmSummary = document.getElementById("rsvpConfirmSummary");
+  const btnSendRsvpWhatsApp = document.getElementById("btnSendRsvpWhatsApp");
+  const btnCopyRsvp = document.getElementById("btnCopyRsvp");
+  const btnEditRsvp = document.getElementById("btnEditRsvp");
+
+  let lastSavedRsvp = null;
+
+  function syncGuestStepperState() {
+    if (!rsvpForm || !guestCountField) return;
+    const checked = rsvpForm.querySelector('input[name="attendance"]:checked');
+    guestCountField.classList.toggle("is-disabled", Boolean(checked && checked.value === "declining"));
+  }
+
+  if (rsvpForm) {
+    rsvpForm.querySelectorAll('input[name="attendance"]').forEach(function (radio) {
+      radio.addEventListener("change", syncGuestStepperState);
+    });
+  }
+
+  if (btnDecGuests && guestCountInput) {
+    btnDecGuests.addEventListener("click", function () {
+      guestCountInput.value = String(Math.max(1, Number(guestCountInput.value || 1) - 1));
+    });
+  }
+  if (btnIncGuests && guestCountInput) {
+    btnIncGuests.addEventListener("click", function () {
+      guestCountInput.value = String(Math.min(8, Number(guestCountInput.value || 1) + 1));
+    });
+  }
+
+  function formatRsvpPlainText(entry) {
+    if (currentLang === "ar") {
+      const status = entry.attendance === "attending"
+        ? "تأكيد الحضور بكل سرور (" + entry.guests + " " + (entry.guests === 1 ? "ضيف" : "ضيوف") + ")"
+        : "الاعتذار مع خالص التمنيات السعيدة";
+      return "تأكيد حضور زفاف " + WEDDING_CONFIG.coupleNames + "\n"
+        + "الاسم: " + entry.name + "\n"
+        + "الرد: " + status
+        + (entry.note ? "\nرسالة للعروسين: " + entry.note : "");
+    }
+    const status = entry.attendance === "attending"
+      ? "Joyfully Accepts (" + entry.guests + " " + (entry.guests === 1 ? "Guest" : "Guests") + ")"
+      : "Regretfully Declines (Sending warm wishes)";
+    return "Wedding RSVP — " + WEDDING_CONFIG.coupleNames + "\n"
+      + "Guest Name: " + entry.name + "\n"
+      + "Response: " + status
+      + (entry.note ? "\nMessage: " + entry.note : "");
+  }
+
+  function renderRsvpConfirmation(entry) {
+    if (!entry || !rsvpConfirmation || !rsvpForm) return;
+    lastSavedRsvp = entry;
+    rsvpForm.hidden = true;
+    rsvpConfirmation.hidden = false;
+
+    if (rsvpConfirmSummary) {
+      if (currentLang === "ar") {
+        rsvpConfirmSummary.textContent = entry.attendance === "attending"
+          ? "شكرًا لك يا " + entry.name + " — تم تسجيل تأكيد حضورك (" + entry.guests + " " + (entry.guests === 1 ? "فرد" : "أفراد") + ") محليًا على هذا الجهاز."
+          : "شكرًا لك يا " + entry.name + " — تم تسجيل اعتذارك بكل ود محليًا، ونتمنى لك كل الخير.";
+      } else {
+        rsvpConfirmSummary.textContent = entry.attendance === "attending"
+          ? "Thank you, " + entry.name + " — your joyful acceptance for " + entry.guests + " " + (entry.guests === 1 ? "guest" : "guests") + " is prepared below."
+          : "Thank you, " + entry.name + " — your kind wishes have been noted below.";
+      }
+    }
+
+    if (btnSendRsvpWhatsApp) {
+      btnSendRsvpWhatsApp.href = "https://wa.me/" + WEDDING_CONFIG.rsvpWhatsAppNumber + "?text=" + encodeURIComponent(formatRsvpPlainText(entry));
+    }
+  }
+
+  if (rsvpForm) {
+    rsvpForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = (guestNameInput ? guestNameInput.value : "").trim();
+      if (name.length < 2) {
+        if (guestNameError) {
+          guestNameError.textContent = currentLang === "ar"
+            ? "يرجى كتابة الاسم الكامل للمدعو قبل تسجيل الرد."
+            : "Please enter your full name before recording your response.";
+        }
+        if (guestNameInput) guestNameInput.focus();
+        return;
+      }
+      if (guestNameError) guestNameError.textContent = "";
+
+      const checked = rsvpForm.querySelector('input[name="attendance"]:checked');
+      const attendance = checked ? checked.value : "attending";
+      const guests = attendance === "attending" ? Math.max(1, Math.min(8, Number(guestCountInput ? guestCountInput.value : 1))) : 0;
+      const note = (guestNoteInput ? guestNoteInput.value : "").trim();
+
+      const entry = { name: name, attendance: attendance, guests: guests, note: note, savedAt: new Date().toISOString() };
+      try { localStorage.setItem(RSVP_STORAGE_KEY, JSON.stringify(entry)); } catch (_) {}
+      renderRsvpConfirmation(entry);
+      showToast(currentLang === "ar" ? "تم تجهيز ردك محليًا بنجاح" : "RSVP prepared locally in preview");
+    });
+  }
+
+  if (btnCopyRsvp) {
+    btnCopyRsvp.addEventListener("click", function () {
+      if (!lastSavedRsvp) return;
+      copyToClipboard(formatRsvpPlainText(lastSavedRsvp), currentLang === "ar" ? "تم نسخ نص تأكيد الحضور" : "RSVP text copied to clipboard");
+    });
+  }
+
+  if (btnEditRsvp) {
+    btnEditRsvp.addEventListener("click", function () {
+      if (rsvpConfirmation) rsvpConfirmation.hidden = true;
+      if (rsvpForm) rsvpForm.hidden = false;
+      if (guestNameInput) guestNameInput.focus();
+    });
+  }
+
+  try {
+    const existing = localStorage.getItem(RSVP_STORAGE_KEY);
+    if (existing) {
+      const parsed = JSON.parse(existing);
+      if (parsed && parsed.name) {
+        if (guestNameInput) guestNameInput.value = parsed.name;
+        if (guestNoteInput && parsed.note) guestNoteInput.value = parsed.note;
+        if (guestCountInput && parsed.guests) guestCountInput.value = String(parsed.guests);
+        const radio = rsvpForm && rsvpForm.querySelector('input[name="attendance"][value="' + parsed.attendance + '"]');
+        if (radio) radio.checked = true;
+        syncGuestStepperState();
+      }
+    }
+  } catch (_) {}
+
+  /* ========================================================================
+     9. SCROLL REVEALS
+     ======================================================================== */
+  const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const revealItems = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window && !reducedMotion) {
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -30px 0px" });
+    revealItems.forEach(function (el) { observer.observe(el); });
+  } else {
+    revealItems.forEach(function (el) { el.classList.add("is-visible"); });
+  }
+
+  /* ========================================================================
+     10. FULL ENGLISH / ARABIC BILINGUAL SWITCHER
+     ======================================================================== */
+  const I18N = {
+    en: {
+      entranceWhisper: "YOU ARE CORDIALLY INVITED",
+      tapToOpen: "Tap the Gold Seal to Open",
+      navCover: "Invitation Card",
+      navWelcome: "Welcome",
+      navStory: "Portrait",
+      navCountdown: "Countdown",
+      navDetails: "Details",
+      navLocation: "Location",
+      navRsvp: "RSVP",
+      btnReplayShort: "Envelope",
+      cardKicker: "TOGETHER WITH THEIR FAMILIES",
+      cardInviteLine: "INVITE YOU TO JOIN THEM IN CELEBRATING THEIR MARRIAGE",
+      btnHeroRsvp: "Confirm Attendance",
+      btnExploreDetails: "Explore Details",
+      welcomeEyebrow: "WITH BLESSINGS & JOY",
+      welcomeSub: "A Celebration of Love",
+      welcomeNote: "The beginning of a cherished chapter — an evening of timeless elegance, heartfelt prayers, and warm celebration we would be deeply honored to share with you.",
+      watchEnvelopeAgain: "Replay Envelope Opening",
+      portraitEyebrow: "OUR FOREVER BEGINS",
+      portraitHeading: "Two Hearts,<br><em>One Timeless Promise</em>",
+      portraitCopy: "Surrounded by the warmth of our families and dearest loved ones, we gather to celebrate a union written with grace, gratitude, and quiet beauty. Every detail of this evening has been lovingly prepared for your presence.",
+      ringsCaption: "Together with our families — August 21, 2027",
+      cdEyebrow: "COUNTING EVERY MOMENT",
+      cdHeading: "Until We Say <em>Forever</em>",
+      cdDays: "Days",
+      cdHours: "Hours",
+      cdMinutes: "Minutes",
+      cdSeconds: "Seconds",
+      cdArrivedShort: "Celebrating Forever Today",
+      cdArrivedTitle: "Our Wedding Celebration Has Arrived!",
+      cdArrivedSub: "Thank you for sharing the joy, blessings, and unforgettable beauty of our special day.",
+      btnAddCalendar: "Save the Date (.ics Calendar)",
+      detailsEyebrow: "THE CELEBRATION",
+      detailsHeading: "Wedding <em>Details</em>",
+      detailsSub: "Everything you need to plan an effortless and memorable evening with us.",
+      lblDate: "WEDDING DATE",
+      dateNote: "An evening of joy under summer skies in Cairo.",
+      lblTime: "CEREMONY & RECEPTION",
+      timeNote: "Welcome reception begins promptly at seven in the evening.",
+      lblVenue: "THE VENUE",
+      venueNote: "Grand Crystal Ballroom & Garden Terrace.",
+      lblAddress: "ADDRESS",
+      sched1Title: "Guests Arrival & Welcome",
+      sched2Title: "Grand Entrance & First Dance",
+      sched3Title: "Candlelit Dinner & Celebration",
+      locEyebrow: "VENUE DIRECTIONS",
+      locNote: "Complimentary valet parking is available at the main palace entrance starting at 6:30 PM. Tap below for direct turn-by-turn navigation on Google Maps.",
+      btnOpenMaps: "Open in Google Maps",
+      btnCopyAddress: "Copy Address",
+      rsvpEyebrow: "KINDLY REPLY",
+      rsvpHeading: "Confirm Your <em>Attendance</em>",
+      rsvpSub: "We would be delighted to celebrate with you. Please share your response below.",
+      lblGuestName: "Guest Full Name",
+      phGuestName: "Enter your full name",
+      lblAttendance: "Will You Join Our Celebration?",
+      optAcceptTitle: "Joyfully Accepts",
+      optAcceptSub: "I will be honored to attend",
+      optDeclineTitle: "Regretfully Declines",
+      optDeclineSub: "Sending warm wishes from afar",
+      lblGuests: "Number of Attending Guests (Including Yourself)",
+      lblWish: "A Warm Wish for Mostafa & Basmala (Optional)",
+      phWish: "Write a heartfelt blessing for the couple...",
+      btnSubmitRsvp: "Record My RSVP Response",
+      rsvpDoneTitle: "Thank You for Your Response",
+      rsvpHonestNotice: "Note: This invitation is currently running without a live backend database, so your response has been saved locally in your browser preview. To deliver it directly to the couple, tap below to send your prepared reply via WhatsApp.",
+      btnSendWhatsApp: "Send RSVP via WhatsApp",
+      btnCopyRsvp: "Copy Response Text",
+      btnEditRsvp: "Edit My Response",
+      finaleVerse: "“Your presence is the most treasured gift we could ask for as we begin our life together.”"
+    },
+    ar: {
+      entranceWhisper: "نتشرف بدعوتكم لحضور حفل الزفاف",
+      tapToOpen: "اضغط على الختم الذهبي لفتح الدعوة",
+      navCover: "بطاقة الدعوة",
+      navWelcome: "الترحيب",
+      navStory: "الصورة",
+      navCountdown: "العدّاد",
+      navDetails: "التفاصيل",
+      navLocation: "الموقع",
+      navRsvp: "تأكيد الحضور",
+      btnReplayShort: "الظرف",
+      cardKicker: "برفقة عائلتيهما الكريمتين",
+      cardInviteLine: "يتشرفان بدعوتكم لمشاركتهما فرحة الزفاف",
+      btnHeroRsvp: "تأكيد الحضور",
+      btnExploreDetails: "استكشف التفاصيل",
+      welcomeEyebrow: "بكل الحب والامتنان",
+      welcomeSub: "احتفال يجمع قلوبنا معكم",
+      welcomeNote: "أمسية حالمة تجمع الأهل والأحبة لنبدأ معًا أجمل فصول حياتنا، ويزداد يومنا بهاءً وبهجة بحضوركم الغالي.",
+      watchEnvelopeAgain: "إعادة فتح الظرف",
+      portraitEyebrow: "بداية العمر معًا",
+      portraitHeading: "قلبان جمعهما القدر،<br><em>ووعدٌ يمتد للأبد</em>",
+      portraitCopy: "وسط دفء العائلة وأقرب الأحباء، نحتفل ببداية حكاية كُتبت بالمودة والسكينة. صُمّمت كل تفصيلة في هذه الليلة بحب لتكون ذكرى لا تُنسى بحضوركم.",
+      ringsCaption: "برفقة العائلتين — ٢١ أغسطس ٢٠٢٧",
+      cdEyebrow: "نعدّ اللحظات شوقًا",
+      cdHeading: "حتى يجمعنا <em>يوم الفرح</em>",
+      cdDays: "أيام",
+      cdHours: "ساعات",
+      cdMinutes: "دقائق",
+      cdSeconds: "ثوانٍ",
+      cdArrivedShort: "نحتفل اليوم بأجمل بداية",
+      cdArrivedTitle: "لقد حان يوم زفافنا السعيد!",
+      cdArrivedSub: "شكرًا من القلب لمشاركتكم فرحتنا ودعواتكم الصادقة في أجمل أيام العمر.",
+      btnAddCalendar: "إضافة الموعد للتقويم (.ics)",
+      detailsEyebrow: "تفاصيل الأمسية",
+      detailsHeading: "موعد <em>ومكان الاحتفال</em>",
+      detailsSub: "كل ما تحتاجون معرفته لتنسيق حضوركم والاستمتاع معنا بأجمل ليلة.",
+      lblDate: "تاريخ الفرح",
+      dateNote: "أمسية صيفية راقية تجمعنا بكم في القاهرة.",
+      lblTime: "موعد الحفل",
+      timeNote: "يبدأ استقبال الضيوف الكرام تمام السابعة مساءً.",
+      lblVenue: "اسم القاعة",
+      venueNote: "قاعة الكريستال الكبرى وتراس الحديقة.",
+      lblAddress: "عنوان المكان",
+      sched1Title: "استقبال الضيوف والترحيب",
+      sched2Title: "الزفة الكبرى والرقصة الأولى",
+      sched3Title: "العشاء الاحتفالي والأمسية",
+      locEyebrow: "الاتجاهات والخريطة",
+      locNote: "تتوفر خدمة صف السيارات المجانية عند البوابة الرئيسية للقاعة بدءًا من السادسة والنصف مساءً. اضغط بالأسفل لفتح الموقع مباشرة على خرائط Google.",
+      btnOpenMaps: "فتح الموقع على خرائط Google",
+      btnCopyAddress: "نسخ عنوان القاعة",
+      rsvpEyebrow: "يسعدنا تأكيدكم",
+      rsvpHeading: "تأكيد <em>الحضور</em>",
+      rsvpSub: "وجودكم بيننا هو أجمل هدية. يرجى تسجيل ردكم الكريم أدناه.",
+      lblGuestName: "اسم المدعو بالكامل",
+      phGuestName: "اكتب اسمك الكامل هنا",
+      lblAttendance: "هل ستشرفوننا بالحضور؟",
+      optAcceptTitle: "تأكيد الحضور بكل سرور",
+      optAcceptSub: "يسعدني مشاركتكم فرحة العمر",
+      optDeclineTitle: "الاعتذار مع خالص التمنيات",
+      optDeclineSub: "أرسل لكم أطيب الدعوات عن بُعد",
+      lblGuests: "عدد الحاضرين (شاملًا حضرتك)",
+      lblWish: "كلمة محبة لمصطفى وبسملة (اختياري)",
+      phWish: "اكتب دعوة أو تهنئة جميلة للعروسين...",
+      btnSubmitRsvp: "تسجيل تأكيد الحضور",
+      rsvpDoneTitle: "شكرًا لمشاركتنا ردّك الكريم",
+      rsvpHonestNotice: "ملاحظة بكل شفافية: هذه الدعوة تعمل حاليًا بدون خادم قاعدة بيانات (Backend) متصل، لذا تم حفظ ردك محليًا في المتصفح فقط. لإرسال التأكيد فعليًا إلى العروسين، اضغط على زر واتساب أدناه لإرسال رسالتك المجهّزة مباشرة.",
+      btnSendWhatsApp: "إرسال التأكيد عبر واتساب",
+      btnCopyRsvp: "نسخ نص التأكيد",
+      btnEditRsvp: "تعديل الرد",
+      finaleVerse: "«حضوركم الغالي هو أجمل هدية تزين بداية حياتنا معًا.»"
+    }
+  };
+
+  const langButtons = [document.getElementById("btnInvLang"), document.getElementById("btnEntranceLang")];
+  function setLanguage(lang) {
+    currentLang = lang === "ar" ? "ar" : "en";
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+    langButtons.forEach(function (btn) {
+      if (btn) btn.textContent = currentLang === "ar" ? "EN" : "عربي";
+    });
+
+    const dict = I18N[currentLang];
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      const k = el.dataset.i18n;
+      if (dict[k]) el.textContent = dict[k];
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(function (el) {
+      const k = el.dataset.i18nHtml;
+      if (dict[k]) el.innerHTML = dict[k];
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+      const k = el.dataset.i18nPlaceholder;
+      if (dict[k]) el.placeholder = dict[k];
+    });
+
+    applyWeddingConfig();
+    if (lastSavedRsvp && rsvpConfirmation && !rsvpConfirmation.hidden) {
+      renderRsvpConfirmation(lastSavedRsvp);
+    }
+  }
+
+  langButtons.forEach(function (btn) {
+    if (btn) {
+      btn.addEventListener("click", function () {
+        setLanguage(currentLang === "en" ? "ar" : "en");
+      });
+    }
+  });
+
+  applyWeddingConfig();
+  syncGuestStepperState();
+})();
