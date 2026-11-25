@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Aref+Ruqaa:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=Great+Vibes&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body class="is-envelope-locked">
   <!-- =====================================================================
@@ -24,15 +24,14 @@
     data-state="closed"
     aria-label="Mostafa and Basmala Wedding Video Cover"
   >
-    <!-- Ambient Blurred Cinema Backlight for Widescreen Desktop -->
+    <!-- Ambient Blurred Cinema Backlight for Widescreen Desktop (played by JS on desktop only) -->
     <video
       class="cover-video-ambient"
       id="coverVideoAmbient"
-      autoplay
       muted
       loop
       playsinline
-      preload="auto"
+      preload="metadata"
       aria-hidden="true"
     >
       <source src="assets/cover-video.mp4" type="video/mp4">
@@ -92,7 +91,7 @@
        ACT II: THE ACTUAL INTERACTIVE WEDDING INVITATION EXPERIENCE
        (Unveils smoothly once the gold wax seal is tapped & envelope opens!)
        ===================================================================== -->
-  <div class="invitation-experience" id="invitationExperience" aria-hidden="true">
+  <div class="invitation-experience" id="invitationExperience" aria-hidden="true" inert>
     <!-- Minimal Floating Navigation Header -->
     <header class="inv-header" id="top">
       <div class="inv-container inv-header-inner">
@@ -262,10 +261,10 @@
             <img class="portrait-floral-spray" src="assets/babys-breath-corner.png" alt="" aria-hidden="true">
           </div>
 
-          <div class="portrait-story-col reveal" style="--delay: 120ms;">
+          <div class="portrait-story-col reveal reveal-d2">
             <p class="section-eyebrow" data-i18n="portraitEyebrow">OUR FOREVER BEGINS</p>
-            <h2 class="serif-section-heading" data-i18n-html="portraitHeading">
-              Two Hearts,<br><em>One Timeless Promise</em>
+            <h2 class="serif-section-heading">
+              <span data-i18n="portraitHeadingLead">Two Hearts,</span><br><em data-i18n="portraitHeadingEm">One Timeless Promise</em>
             </h2>
             <p class="editorial-body-copy" data-i18n="portraitCopy">
               Surrounded by the warmth of our families and dearest loved ones, we gather to celebrate a union written with grace, gratitude, and quiet beauty. Every detail of this evening has been lovingly prepared for your presence.
@@ -286,8 +285,8 @@
         <div class="countdown-paper-bg" aria-hidden="true"></div>
         <div class="inv-container countdown-wrap reveal">
           <p class="section-eyebrow" data-i18n="cdEyebrow">COUNTING EVERY MOMENT</p>
-          <h2 class="serif-section-heading" data-i18n-html="cdHeading">
-            Until We Say <em>Forever</em>
+          <h2 class="serif-section-heading">
+            <span data-i18n="cdHeadingLead">Until We Say</span> <em data-i18n="cdHeadingEm">Forever</em>
           </h2>
           <p class="countdown-date-banner">
             <span data-cfg="dateDisplay">Saturday, August 21, 2027</span>
@@ -335,8 +334,8 @@
         <div class="inv-container">
           <header class="section-center-head reveal">
             <p class="section-eyebrow" data-i18n="detailsEyebrow">THE CELEBRATION</p>
-            <h2 class="serif-section-heading" data-i18n-html="detailsHeading">
-              Wedding <em>Details</em>
+            <h2 class="serif-section-heading">
+              <span data-i18n="detailsHeadingLead">Wedding</span> <em data-i18n="detailsHeadingEm">Details</em>
             </h2>
             <p class="section-lead" data-i18n="detailsSub">
               Everything you need to plan an effortless and memorable evening with us.
@@ -353,7 +352,7 @@
               <p data-i18n="dateNote">An evening of joy under summer skies in Cairo.</p>
             </article>
 
-            <article class="detail-card reveal" style="--delay: 80ms;">
+            <article class="detail-card reveal reveal-d1">
               <div class="detail-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
               </div>
@@ -362,7 +361,7 @@
               <p data-i18n="timeNote">Welcome reception begins promptly at seven in the evening.</p>
             </article>
 
-            <article class="detail-card reveal" style="--delay: 160ms;">
+            <article class="detail-card reveal reveal-d2">
               <div class="detail-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg>
               </div>
@@ -371,7 +370,7 @@
               <p data-i18n="venueNote">Grand Crystal Ballroom &amp; Garden Terrace.</p>
             </article>
 
-            <article class="detail-card reveal" style="--delay: 240ms;">
+            <article class="detail-card reveal reveal-d3">
               <div class="detail-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </div>
@@ -469,8 +468,8 @@
 
             <div class="rsvp-card-inner">
               <p class="section-eyebrow" data-i18n="rsvpEyebrow">KINDLY REPLY</p>
-              <h2 class="serif-section-heading" data-i18n-html="rsvpHeading">
-                Confirm Your <em>Attendance</em>
+              <h2 class="serif-section-heading">
+                <span data-i18n="rsvpHeadingLead">Confirm Your</span> <em data-i18n="rsvpHeadingEm">Attendance</em>
               </h2>
               <p class="section-lead" data-i18n="rsvpSub">
                 We would be delighted to celebrate with you. Please share your response below.
@@ -630,6 +629,6 @@
   <!-- Champagne Toast Feedback -->
   <div class="inv-toast" id="invToast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

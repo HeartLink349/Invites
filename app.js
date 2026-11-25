@@ -87,13 +87,30 @@
   function fallbackCopy(text, successMsg) {
     const ta = document.createElement("textarea");
     ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
+    ta.setAttribute("readonly", "");
+    ta.className = "sr-copy-buffer";
     document.body.appendChild(ta);
     ta.select();
-    try { document.execCommand("copy"); } catch (_) {}
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (_) {}
     document.body.removeChild(ta);
-    showToast(successMsg);
+    if (ok) {
+      showToast(successMsg);
+    } else {
+      showToast(currentLang === "ar" ? "تعذّر النسخ التلقائي — يرجى النسخ يدويًا" : "Unable to copy automatically — please copy manually");
+    }
+  }
+
+  function scrollToTopInstant() {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    } catch (_) {
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function isSafeHttpsUrl(url) {
+    return typeof url === "string" && /^https:\/\/[^\s]+$/i.test(url.trim());
   }
 
   /* ========================================================================
@@ -109,10 +126,15 @@
     });
     document.querySelectorAll("[data-cfg-src]").forEach(function (img) {
       const key = img.dataset.cfgSrc;
-      if (WEDDING_CONFIG[key]) img.src = WEDDING_CONFIG[key];
+      const src = WEDDING_CONFIG[key];
+      if (typeof src === "string" && /^assets\/[a-zA-Z0-9._-]+$/.test(src)) {
+        img.src = src;
+      }
     });
     const mapsBtn = document.getElementById("btnGoogleMaps");
-    if (mapsBtn) mapsBtn.href = WEDDING_CONFIG.googleMapsUrl;
+    if (mapsBtn && isSafeHttpsUrl(WEDDING_CONFIG.googleMapsUrl)) {
+      mapsBtn.href = WEDDING_CONFIG.googleMapsUrl;
+    }
   }
 
   /* ========================================================================
@@ -132,13 +154,25 @@
     envelopeTimers = [];
   }
 
+  function isDesktopAmbientVisible() {
+    return !(window.matchMedia && window.matchMedia("(max-width: 640px)").matches);
+  }
+
   function ensureCoverVideosPlay() {
-    [coverVideoHero, coverVideoAmbient].forEach(function (vid) {
-      if (!vid) return;
-      vid.muted = true;
-      const p = vid.play();
-      if (p && typeof p.catch === "function") p.catch(function () {});
-    });
+    if (coverVideoHero) {
+      coverVideoHero.muted = true;
+      const pHero = coverVideoHero.play();
+      if (pHero && typeof pHero.catch === "function") pHero.catch(function () {});
+    }
+    if (coverVideoAmbient) {
+      if (isDesktopAmbientVisible()) {
+        coverVideoAmbient.muted = true;
+        const pAmb = coverVideoAmbient.play();
+        if (pAmb && typeof pAmb.catch === "function") pAmb.catch(function () {});
+      } else if (!coverVideoAmbient.paused) {
+        coverVideoAmbient.pause();
+      }
+    }
   }
 
   function pauseCoverVideos() {
@@ -158,10 +192,12 @@
     }
 
     // Smooth cinematic cross-dissolve into the existing inner invitation
-    window.scrollTo({ top: 0, behavior: "instant" });
+    scrollToTopInstant();
     envelopeEntrance.dataset.state = "exiting";
+    envelopeEntrance.setAttribute("inert", "");
     document.body.classList.remove("is-envelope-locked");
     if (invitationExperience) {
+      invitationExperience.removeAttribute("inert");
       invitationExperience.classList.add("is-revealed");
       invitationExperience.setAttribute("aria-hidden", "false");
     }
@@ -174,18 +210,17 @@
 
   function replayCover() {
     clearTimers();
-    const drawer = document.getElementById("invMobileDrawer");
-    const menuBtn = document.getElementById("btnInvMenu");
-    if (drawer) drawer.hidden = true;
-    if (menuBtn) menuBtn.setAttribute("aria-expanded", "false");
+    closeMobileDrawer();
 
-    window.scrollTo({ top: 0, behavior: "instant" });
+    scrollToTopInstant();
     document.body.classList.add("is-envelope-locked");
     if (invitationExperience) {
+      invitationExperience.setAttribute("inert", "");
       invitationExperience.classList.remove("is-revealed");
       invitationExperience.setAttribute("aria-hidden", "true");
     }
     if (envelopeEntrance) {
+      envelopeEntrance.removeAttribute("inert");
       envelopeEntrance.dataset.state = "closed";
     }
     ensureCoverVideosPlay();
@@ -198,7 +233,7 @@
   if (btnFinaleReplay) btnFinaleReplay.addEventListener("click", replayCover);
 
   /* ========================================================================
-     5. HEADER SCROLL & MOBILE DRAWER
+     5. HEADER SCROLL & MOBILE DRAWER (with Escape + Outside-Click Close)
      ======================================================================== */
   const invHeader = document.querySelector(".inv-header");
   function handleScroll() {
@@ -209,6 +244,12 @@
 
   const btnInvMenu = document.getElementById("btnInvMenu");
   const invMobileDrawer = document.getElementById("invMobileDrawer");
+
+  function closeMobileDrawer() {
+    if (invMobileDrawer) invMobileDrawer.hidden = true;
+    if (btnInvMenu) btnInvMenu.setAttribute("aria-expanded", "false");
+  }
+
   if (btnInvMenu && invMobileDrawer) {
     btnInvMenu.addEventListener("click", function () {
       const open = invMobileDrawer.hidden;
@@ -216,10 +257,19 @@
       btnInvMenu.setAttribute("aria-expanded", String(open));
     });
     invMobileDrawer.querySelectorAll("a").forEach(function (link) {
-      link.addEventListener("click", function () {
-        invMobileDrawer.hidden = true;
-        btnInvMenu.setAttribute("aria-expanded", "false");
-      });
+      link.addEventListener("click", closeMobileDrawer);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !invMobileDrawer.hidden) {
+        closeMobileDrawer();
+        btnInvMenu.focus();
+      }
+    });
+    document.addEventListener("click", function (e) {
+      if (invMobileDrawer.hidden) return;
+      if (invHeader && e.target instanceof Node && !invHeader.contains(e.target)) {
+        closeMobileDrawer();
+      }
     });
   }
 
@@ -291,14 +341,24 @@
   updateCountdown();
   setInterval(updateCountdown, 1000);
 
-  /* Real RFC-5545 .ics Calendar Export */
+  /* Real RFC-5545 .ics Calendar Export (escaped against injection) */
   function toIcsUtc(iso) {
     return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  }
+
+  function escapeIcsText(str) {
+    return String(str || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/\r?\n/g, " ")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,");
   }
 
   const btnDownloadCalendar = document.getElementById("btnDownloadCalendar");
   if (btnDownloadCalendar) {
     btnDownloadCalendar.addEventListener("click", function () {
+      const safeNames = escapeIcsText(WEDDING_CONFIG.coupleNames);
+      const safeLocation = escapeIcsText(WEDDING_CONFIG.en.venueFullAddress);
       const ics = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
@@ -308,9 +368,9 @@
         "DTSTAMP:" + toIcsUtc(new Date().toISOString()),
         "DTSTART:" + toIcsUtc(WEDDING_CONFIG.weddingDateISO),
         "DTEND:" + toIcsUtc(WEDDING_CONFIG.weddingEndISO),
-        "SUMMARY:" + WEDDING_CONFIG.coupleNames + " — Wedding Celebration",
-        "DESCRIPTION:Together with their families, " + WEDDING_CONFIG.coupleNames + " invite you to join them in celebrating their marriage.",
-        "LOCATION:" + WEDDING_CONFIG.en.venueFullAddress,
+        "SUMMARY:" + safeNames + " — Wedding Celebration",
+        "DESCRIPTION:Together with their families\\, " + safeNames + " invite you to join them in celebrating their marriage.",
+        "LOCATION:" + safeLocation,
         "END:VEVENT",
         "END:VCALENDAR"
       ].join("\r\n");
@@ -420,7 +480,8 @@
     }
 
     if (btnSendRsvpWhatsApp) {
-      btnSendRsvpWhatsApp.href = "https://wa.me/" + WEDDING_CONFIG.rsvpWhatsAppNumber + "?text=" + encodeURIComponent(formatRsvpPlainText(entry));
+      const cleanPhone = String(WEDDING_CONFIG.rsvpWhatsAppNumber || "").replace(/\D/g, "");
+      btnSendRsvpWhatsApp.href = "https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(formatRsvpPlainText(entry));
     }
   }
 
@@ -470,19 +531,24 @@
     const existing = localStorage.getItem(RSVP_STORAGE_KEY);
     if (existing) {
       const parsed = JSON.parse(existing);
-      if (parsed && parsed.name) {
-        if (guestNameInput) guestNameInput.value = parsed.name;
-        if (guestNoteInput && parsed.note) guestNoteInput.value = parsed.note;
-        if (guestCountInput && parsed.guests) guestCountInput.value = String(parsed.guests);
-        const radio = rsvpForm && rsvpForm.querySelector('input[name="attendance"][value="' + parsed.attendance + '"]');
-        if (radio) radio.checked = true;
+      if (parsed && typeof parsed === "object" && typeof parsed.name === "string" && parsed.name.trim()) {
+        if (guestNameInput) guestNameInput.value = parsed.name.slice(0, 80);
+        if (guestNoteInput && typeof parsed.note === "string") guestNoteInput.value = parsed.note.slice(0, 240);
+        if (guestCountInput && Number.isFinite(Number(parsed.guests))) {
+          const clamped = Math.max(1, Math.min(8, Math.floor(Number(parsed.guests))));
+          guestCountInput.value = String(clamped);
+        }
+        if (parsed.attendance === "attending" || parsed.attendance === "declining") {
+          const radio = rsvpForm && rsvpForm.querySelector('input[name="attendance"][value="' + parsed.attendance + '"]');
+          if (radio) radio.checked = true;
+        }
         syncGuestStepperState();
       }
     }
   } catch (_) {}
 
   /* ========================================================================
-     9. SCROLL REVEALS
+     9. SCROLL REVEALS (Zero-Lag Pre-Trigger for Tall Mobile Cards)
      ======================================================================== */
   const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const revealItems = document.querySelectorAll(".reveal");
@@ -494,7 +560,7 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.12, rootMargin: "0px 0px -30px 0px" });
+    }, { threshold: 0.02, rootMargin: "0px 0px 40px 0px" });
     revealItems.forEach(function (el) { observer.observe(el); });
   } else {
     revealItems.forEach(function (el) { el.classList.add("is-visible"); });
@@ -510,6 +576,8 @@
   const TARGET_AUDIO_VOLUME = 0.72;
   let userMutedAudio = false;
   let isFadingOutAudio = false;
+  let audioPlayPending = false;
+  let wasPlayingBeforeHide = false;
   let audioFadeRaf = null;
   let gestureUnlockAttached = false;
 
@@ -543,7 +611,7 @@
 
   function updateAudioButtonUI() {
     if (!floatingAudioBtn) return;
-    const isPlaying = Boolean(weddingAudio && !weddingAudio.paused && !weddingAudio.ended);
+    const isPlaying = Boolean(weddingAudio && !weddingAudio.paused && !weddingAudio.ended && !isFadingOutAudio);
     floatingAudioBtn.classList.toggle("is-playing", isPlaying);
     floatingAudioBtn.setAttribute("aria-pressed", String(isPlaying));
 
@@ -559,14 +627,13 @@
   function removeGestureUnlockListeners() {
     if (!gestureUnlockAttached) return;
     gestureUnlockAttached = false;
-    window.removeEventListener("pointerdown", handleFirstUserGesture, true);
-    window.removeEventListener("touchstart", handleFirstUserGesture, true);
-    window.removeEventListener("keydown", handleFirstUserGesture, true);
     window.removeEventListener("click", handleFirstUserGesture, true);
+    window.removeEventListener("touchend", handleFirstUserGesture, true);
+    window.removeEventListener("keydown", handleFirstUserGesture, true);
   }
 
   function startWeddingAudioIfAllowed() {
-    if (!weddingAudio || userMutedAudio) return;
+    if (!weddingAudio || userMutedAudio || audioPlayPending) return;
     isFadingOutAudio = false;
     if (!weddingAudio.paused) {
       fadeAudioVolume(TARGET_AUDIO_VOLUME, 450);
@@ -578,19 +645,28 @@
     cancelAudioFade();
     weddingAudio.muted = false;
     weddingAudio.volume = 0.02;
+    audioPlayPending = true;
 
     const playPromise = weddingAudio.play();
     if (playPromise && typeof playPromise.then === "function") {
       playPromise.then(function () {
+        audioPlayPending = false;
+        if (userMutedAudio) {
+          weddingAudio.pause();
+          updateAudioButtonUI();
+          return;
+        }
         removeGestureUnlockListeners();
         fadeAudioVolume(TARGET_AUDIO_VOLUME, 950);
         updateAudioButtonUI();
       }).catch(function () {
+        audioPlayPending = false;
         // Browser blocked unmuted autoplay before first gesture — wait silently for first tap
         attachGestureUnlockListeners();
         updateAudioButtonUI();
       });
     } else {
+      audioPlayPending = false;
       removeGestureUnlockListeners();
       fadeAudioVolume(TARGET_AUDIO_VOLUME, 950);
       updateAudioButtonUI();
@@ -602,7 +678,7 @@
       removeGestureUnlockListeners();
       return;
     }
-    if (floatingAudioBtn && event && event.target && floatingAudioBtn.contains(event.target)) {
+    if (floatingAudioBtn && event && event.target instanceof Node && floatingAudioBtn.contains(event.target)) {
       return;
     }
     startWeddingAudioIfAllowed();
@@ -611,10 +687,9 @@
   function attachGestureUnlockListeners() {
     if (gestureUnlockAttached || userMutedAudio) return;
     gestureUnlockAttached = true;
-    window.addEventListener("pointerdown", handleFirstUserGesture, { capture: true, passive: true });
-    window.addEventListener("touchstart", handleFirstUserGesture, { capture: true, passive: true });
-    window.addEventListener("keydown", handleFirstUserGesture, { capture: true });
     window.addEventListener("click", handleFirstUserGesture, { capture: true });
+    window.addEventListener("touchend", handleFirstUserGesture, { capture: true, passive: true });
+    window.addEventListener("keydown", handleFirstUserGesture, { capture: true });
   }
 
   function toggleWeddingAudio() {
@@ -623,6 +698,7 @@
       userMutedAudio = true;
       isFadingOutAudio = true;
       removeGestureUnlockListeners();
+      updateAudioButtonUI();
       fadeAudioVolume(0, 260, function () {
         isFadingOutAudio = false;
         weddingAudio.pause();
@@ -642,6 +718,21 @@
   if (floatingAudioBtn) {
     floatingAudioBtn.addEventListener("click", toggleWeddingAudio);
   }
+
+  // Pause music respectfully if guest minimizes tab/app; softly resume when returning
+  document.addEventListener("visibilitychange", function () {
+    if (!weddingAudio) return;
+    if (document.hidden) {
+      wasPlayingBeforeHide = !weddingAudio.paused && !isFadingOutAudio;
+      if (wasPlayingBeforeHide) {
+        cancelAudioFade();
+        weddingAudio.pause();
+      }
+    } else if (wasPlayingBeforeHide && !userMutedAudio) {
+      wasPlayingBeforeHide = false;
+      startWeddingAudioIfAllowed();
+    }
+  });
 
   // Attempt immediate background music on entry; gracefully arm first-gesture unlock if blocked
   startWeddingAudioIfAllowed();
@@ -671,11 +762,13 @@
       welcomeNote: "The beginning of a cherished chapter — an evening of timeless elegance, heartfelt prayers, and warm celebration we would be deeply honored to share with you.",
       watchEnvelopeAgain: "Replay Cover Video",
       portraitEyebrow: "OUR FOREVER BEGINS",
-      portraitHeading: "Two Hearts,<br><em>One Timeless Promise</em>",
+      portraitHeadingLead: "Two Hearts,",
+      portraitHeadingEm: "One Timeless Promise",
       portraitCopy: "Surrounded by the warmth of our families and dearest loved ones, we gather to celebrate a union written with grace, gratitude, and quiet beauty. Every detail of this evening has been lovingly prepared for your presence.",
       ringsCaption: "Together with our families — August 21, 2027",
       cdEyebrow: "COUNTING EVERY MOMENT",
-      cdHeading: "Until We Say <em>Forever</em>",
+      cdHeadingLead: "Until We Say",
+      cdHeadingEm: "Forever",
       cdDays: "Days",
       cdHours: "Hours",
       cdMinutes: "Minutes",
@@ -685,7 +778,8 @@
       cdArrivedSub: "Thank you for sharing the joy, blessings, and unforgettable beauty of our special day.",
       btnAddCalendar: "Save the Date (.ics Calendar)",
       detailsEyebrow: "THE CELEBRATION",
-      detailsHeading: "Wedding <em>Details</em>",
+      detailsHeadingLead: "Wedding",
+      detailsHeadingEm: "Details",
       detailsSub: "Everything you need to plan an effortless and memorable evening with us.",
       lblDate: "WEDDING DATE",
       dateNote: "An evening of joy under summer skies in Cairo.",
@@ -702,7 +796,8 @@
       btnOpenMaps: "Open in Google Maps",
       btnCopyAddress: "Copy Address",
       rsvpEyebrow: "KINDLY REPLY",
-      rsvpHeading: "Confirm Your <em>Attendance</em>",
+      rsvpHeadingLead: "Confirm Your",
+      rsvpHeadingEm: "Attendance",
       rsvpSub: "We would be delighted to celebrate with you. Please share your response below.",
       lblGuestName: "Guest Full Name",
       phGuestName: "Enter your full name",
@@ -743,11 +838,13 @@
       welcomeNote: "أمسية حالمة تجمع الأهل والأحبة لنبدأ معًا أجمل فصول حياتنا، ويزداد يومنا بهاءً وبهجة بحضوركم الغالي.",
       watchEnvelopeAgain: "إعادة عرض فيديو الغلاف",
       portraitEyebrow: "بداية العمر معًا",
-      portraitHeading: "قلبان جمعهما القدر،<br><em>ووعد يمتد للأبد</em>",
+      portraitHeadingLead: "قلبان جمعهما القدر،",
+      portraitHeadingEm: "ووعد يمتد للأبد",
       portraitCopy: "وسط دفء العائلة وأقرب الأحباء، نحتفل ببداية حكاية كُتبت بالمودة والسكينة. صُمّمت كل تفصيلة في هذه الليلة بحب لتكون ذكرى لا تُنسى بحضوركم.",
       ringsCaption: "برفقة العائلتين — ٢١ أغسطس ٢٠٢٧",
       cdEyebrow: "نعدّ اللحظات شوقًا",
-      cdHeading: "حتى يجمعنا <em>يوم الفرح</em>",
+      cdHeadingLead: "حتى يجمعنا",
+      cdHeadingEm: "يوم الفرح",
       cdDays: "أيام",
       cdHours: "ساعات",
       cdMinutes: "دقائق",
@@ -757,7 +854,8 @@
       cdArrivedSub: "شكرًا من القلب لمشاركتكم فرحتنا ودعواتكم الصادقة في أجمل أيام العمر.",
       btnAddCalendar: "إضافة الموعد للتقويم (.ics)",
       detailsEyebrow: "تفاصيل الأمسية",
-      detailsHeading: "موعد <em>ومكان الاحتفال</em>",
+      detailsHeadingLead: "موعد",
+      detailsHeadingEm: "ومكان الاحتفال",
       detailsSub: "كل ما تحتاجون معرفته لتنسيق حضوركم والاستمتاع معنا بأجمل ليلة.",
       lblDate: "تاريخ الفرح",
       dateNote: "أمسية صيفية راقية تجمعنا بكم في القاهرة.",
@@ -774,7 +872,8 @@
       btnOpenMaps: "فتح الموقع على خرائط Google",
       btnCopyAddress: "نسخ عنوان القاعة",
       rsvpEyebrow: "يسعدنا تأكيدكم",
-      rsvpHeading: "تأكيد <em>الحضور</em>",
+      rsvpHeadingLead: "تأكيد",
+      rsvpHeadingEm: "الحضور",
       rsvpSub: "وجودكم بيننا هو أجمل هدية. يرجى تسجيل ردكم الكريم أدناه.",
       lblGuestName: "اسم المدعو بالكامل",
       phGuestName: "اكتب اسمك الكامل هنا",
@@ -809,10 +908,6 @@
     document.querySelectorAll("[data-i18n]").forEach(function (el) {
       const k = el.dataset.i18n;
       if (dict[k]) el.textContent = dict[k];
-    });
-    document.querySelectorAll("[data-i18n-html]").forEach(function (el) {
-      const k = el.dataset.i18nHtml;
-      if (dict[k]) el.innerHTML = dict[k];
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
       const k = el.dataset.i18nPlaceholder;
