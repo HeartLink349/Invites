@@ -152,6 +152,11 @@
     if (envelopeEntrance.dataset.state !== "closed") return;
     clearTimers();
 
+    // Ensure wedding music unlocks smoothly on opening the invitation unless user muted it
+    if (typeof startWeddingAudioIfAllowed === "function") {
+      startWeddingAudioIfAllowed();
+    }
+
     // Smooth cinematic cross-dissolve into the existing inner invitation
     window.scrollTo({ top: 0, behavior: "instant" });
     envelopeEntrance.dataset.state = "exiting";
@@ -496,7 +501,153 @@
   }
 
   /* ========================================================================
-     10. FULL ENGLISH / ARABIC BILINGUAL SWITCHER
+     10. BACKGROUND WEDDING AUDIO ENGINE & FLOATING LIQUID GLASS CONTROLLER
+     ======================================================================== */
+  const weddingAudio = document.getElementById("weddingAudio");
+  const floatingAudioBtn = document.getElementById("floatingAudioBtn");
+  const floatingAudioLabel = document.getElementById("floatingAudioLabel");
+
+  const TARGET_AUDIO_VOLUME = 0.72;
+  let userMutedAudio = false;
+  let isFadingOutAudio = false;
+  let audioFadeRaf = null;
+  let gestureUnlockAttached = false;
+
+  function cancelAudioFade() {
+    if (audioFadeRaf !== null) {
+      cancelAnimationFrame(audioFadeRaf);
+      audioFadeRaf = null;
+    }
+  }
+
+  function fadeAudioVolume(toVolume, durationMs, onComplete) {
+    if (!weddingAudio) return;
+    cancelAudioFade();
+    const fromVolume = typeof weddingAudio.volume === "number" ? weddingAudio.volume : 0;
+    const start = performance.now();
+
+    function step(now) {
+      const elapsed = now - start;
+      const progress = Math.min(1, durationMs > 0 ? elapsed / durationMs : 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      weddingAudio.volume = Math.max(0, Math.min(1, fromVolume + (toVolume - fromVolume) * eased));
+      if (progress < 1) {
+        audioFadeRaf = requestAnimationFrame(step);
+      } else {
+        audioFadeRaf = null;
+        if (typeof onComplete === "function") onComplete();
+      }
+    }
+    audioFadeRaf = requestAnimationFrame(step);
+  }
+
+  function updateAudioButtonUI() {
+    if (!floatingAudioBtn) return;
+    const isPlaying = Boolean(weddingAudio && !weddingAudio.paused && !weddingAudio.ended);
+    floatingAudioBtn.classList.toggle("is-playing", isPlaying);
+    floatingAudioBtn.setAttribute("aria-pressed", String(isPlaying));
+
+    if (currentLang === "ar") {
+      floatingAudioBtn.setAttribute("aria-label", isPlaying ? "إيقاف موسيقى الفرح" : "تشغيل موسيقى الفرح");
+      if (floatingAudioLabel) floatingAudioLabel.textContent = isPlaying ? "الموسيقى" : "تشغيل";
+    } else {
+      floatingAudioBtn.setAttribute("aria-label", isPlaying ? "Pause wedding music" : "Play wedding music");
+      if (floatingAudioLabel) floatingAudioLabel.textContent = isPlaying ? "Playing" : "Music";
+    }
+  }
+
+  function removeGestureUnlockListeners() {
+    if (!gestureUnlockAttached) return;
+    gestureUnlockAttached = false;
+    window.removeEventListener("pointerdown", handleFirstUserGesture, true);
+    window.removeEventListener("touchstart", handleFirstUserGesture, true);
+    window.removeEventListener("keydown", handleFirstUserGesture, true);
+    window.removeEventListener("click", handleFirstUserGesture, true);
+  }
+
+  function startWeddingAudioIfAllowed() {
+    if (!weddingAudio || userMutedAudio) return;
+    isFadingOutAudio = false;
+    if (!weddingAudio.paused) {
+      fadeAudioVolume(TARGET_AUDIO_VOLUME, 450);
+      updateAudioButtonUI();
+      removeGestureUnlockListeners();
+      return;
+    }
+
+    cancelAudioFade();
+    weddingAudio.muted = false;
+    weddingAudio.volume = 0.02;
+
+    const playPromise = weddingAudio.play();
+    if (playPromise && typeof playPromise.then === "function") {
+      playPromise.then(function () {
+        removeGestureUnlockListeners();
+        fadeAudioVolume(TARGET_AUDIO_VOLUME, 950);
+        updateAudioButtonUI();
+      }).catch(function () {
+        // Browser blocked unmuted autoplay before first gesture — wait silently for first tap
+        attachGestureUnlockListeners();
+        updateAudioButtonUI();
+      });
+    } else {
+      removeGestureUnlockListeners();
+      fadeAudioVolume(TARGET_AUDIO_VOLUME, 950);
+      updateAudioButtonUI();
+    }
+  }
+
+  function handleFirstUserGesture(event) {
+    if (userMutedAudio) {
+      removeGestureUnlockListeners();
+      return;
+    }
+    if (floatingAudioBtn && event && event.target && floatingAudioBtn.contains(event.target)) {
+      return;
+    }
+    startWeddingAudioIfAllowed();
+  }
+
+  function attachGestureUnlockListeners() {
+    if (gestureUnlockAttached || userMutedAudio) return;
+    gestureUnlockAttached = true;
+    window.addEventListener("pointerdown", handleFirstUserGesture, { capture: true, passive: true });
+    window.addEventListener("touchstart", handleFirstUserGesture, { capture: true, passive: true });
+    window.addEventListener("keydown", handleFirstUserGesture, { capture: true });
+    window.addEventListener("click", handleFirstUserGesture, { capture: true });
+  }
+
+  function toggleWeddingAudio() {
+    if (!weddingAudio) return;
+    if (!weddingAudio.paused && !isFadingOutAudio) {
+      userMutedAudio = true;
+      isFadingOutAudio = true;
+      removeGestureUnlockListeners();
+      fadeAudioVolume(0, 260, function () {
+        isFadingOutAudio = false;
+        weddingAudio.pause();
+        updateAudioButtonUI();
+      });
+    } else {
+      userMutedAudio = false;
+      startWeddingAudioIfAllowed();
+    }
+  }
+
+  if (weddingAudio) {
+    weddingAudio.addEventListener("play", updateAudioButtonUI);
+    weddingAudio.addEventListener("pause", updateAudioButtonUI);
+    weddingAudio.addEventListener("ended", updateAudioButtonUI);
+  }
+  if (floatingAudioBtn) {
+    floatingAudioBtn.addEventListener("click", toggleWeddingAudio);
+  }
+
+  // Attempt immediate background music on entry; gracefully arm first-gesture unlock if blocked
+  startWeddingAudioIfAllowed();
+
+  /* ========================================================================
+     11. FULL ENGLISH / ARABIC BILINGUAL SWITCHER
      ======================================================================== */
   const I18N = {
     en: {
@@ -670,6 +821,7 @@
 
     applyWeddingConfig();
     updateCountdown();
+    updateAudioButtonUI();
     if (lastSavedRsvp && rsvpConfirmation && !rsvpConfirmation.hidden) {
       renderRsvpConfirmation(lastSavedRsvp);
     }
@@ -685,4 +837,5 @@
 
   applyWeddingConfig();
   syncGuestStepperState();
+  updateAudioButtonUI();
 })();
