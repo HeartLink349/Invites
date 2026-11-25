@@ -11,8 +11,8 @@
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=Great+Vibes&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Aref+Ruqaa:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=Great+Vibes&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body class="is-envelope-locked">
   <!-- =====================================================================
@@ -47,24 +47,38 @@
         <div class="env-inner-card" aria-hidden="true">
           <div class="env-inner-card-frame">
             <span class="inner-card-kicker" data-i18n="cardKicker">TOGETHER WITH THEIR FAMILIES</span>
-            <span class="inner-card-script" data-cfg="coupleNames">Mostafa &amp; Basmala</span>
+            <span class="inner-card-script" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</span>
             <span class="inner-card-rule"></span>
             <span class="inner-card-date" data-cfg="dateShort">AUGUST 21, 2027</span>
             <span class="inner-card-venue" data-cfg="venueName">Royal Palace Hall</span>
           </div>
         </div>
 
+        <!-- Couture Inner Antique-Gold Hairline Border Frame -->
+        <div class="env-gold-border" aria-hidden="true"></div>
+
         <!-- Crisp Embossed Champagne Diagonal Paper Flaps -->
         <div class="env-flap env-flap--left" aria-hidden="true"></div>
         <div class="env-flap env-flap--right" aria-hidden="true"></div>
         <div class="env-flap env-flap--bottom" aria-hidden="true"></div>
 
-        <!-- Delicate Baby's Breath Sprig Over Lower-Left Fold -->
+        <!-- Delicate Baby's Breath Sprig + Burgundy Rose Accent Over Lower-Left Fold -->
         <img class="env-sprig" src="assets/babys-breath-corner.png" alt="" aria-hidden="true">
+        <img class="env-rose-accent" src="assets/burgundy-rose-corner.png" alt="" aria-hidden="true">
 
-        <!-- 3D Animated Top Triangular Embossed Flap -->
+        <!-- 3D Animated Top Triangular Embossed Flap with Gilded Edge & Embossed Monogram -->
         <div class="env-top-hinge" id="envTopHinge">
-          <div class="env-top-face env-top-front"></div>
+          <div class="env-top-face env-top-front">
+            <svg class="flap-gilded-edge" viewBox="0 0 1000 500" preserveAspectRatio="none" fill="none" aria-hidden="true">
+              <polyline points="0,0 500,482 1000,0" stroke="#FFF9EE" stroke-opacity="0.82" stroke-width="4"/>
+              <polyline points="22,0 500,462 978,0" stroke="#B69A70" stroke-opacity="0.72" stroke-width="1.8"/>
+              <polyline points="36,0 500,448 964,0" stroke="#B69A70" stroke-opacity="0.34" stroke-width="1"/>
+            </svg>
+            <div class="flap-embossed-crest">
+              <span class="flap-crest-label" data-i18n="flapLabel">WEDDING INVITATION</span>
+              <span class="flap-crest-script" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</span>
+            </div>
+          </div>
           <div class="env-top-face env-top-back"></div>
         </div>
 
@@ -138,7 +152,7 @@
     <header class="inv-header" id="top">
       <div class="inv-container inv-header-inner">
         <a class="inv-monogram" href="#cover" aria-label="Mostafa and Basmala — Top">
-          <span class="monogram-script" data-cfg="coupleNames">Mostafa &amp; Basmala</span>
+          <span class="monogram-script" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</span>
         </a>
 
         <nav class="inv-nav" aria-label="Invitation Sections">
@@ -192,7 +206,7 @@
           <!-- Classic Invitation Calligraphy & Synchronized Countdown -->
           <div class="cover-card-body">
             <p class="cover-kicker" data-i18n="cardKicker">TOGETHER WITH THEIR FAMILIES</p>
-            <h1 class="cover-couple-script" data-cfg="coupleNames">Mostafa &amp; Basmala</h1>
+            <h1 class="cover-couple-script" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</h1>
 
             <div class="cover-heart-rule" aria-hidden="true">
               <span></span>
@@ -267,7 +281,7 @@
           <div class="welcome-letterpress-card reveal">
             <div class="letterpress-inner">
               <p class="section-eyebrow" data-i18n="welcomeEyebrow">WITH BLESSINGS &amp; JOY</p>
-              <h2 class="script-hero-title" data-cfg="coupleNames">Mostafa &amp; Basmala</h2>
+              <h2 class="script-hero-title" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</h2>
               <p class="welcome-subtitle" data-i18n="welcomeSub">A Celebration of Love</p>
 
               <div class="gold-botanical-divider" aria-hidden="true">
@@ -330,7 +344,11 @@
           <h2 class="serif-section-heading" data-i18n-html="cdHeading">
             Until We Say <em>Forever</em>
           </h2>
-          <p class="countdown-date-banner" data-cfg="dateTimeFull">Saturday, August 21, 2027 &bull; 7:00 PM</p>
+          <p class="countdown-date-banner">
+            <span data-cfg="dateDisplay">Saturday, August 21, 2027</span>
+            <span class="cd-date-sep" aria-hidden="true">&bull;</span>
+            <span data-cfg="timeDisplay">7:00 PM</span>
+          </p>
 
           <div class="main-countdown-grid" id="mainCountdownGrid" role="timer" aria-live="polite">
             <div class="cd-card">
@@ -352,7 +370,7 @@
           </div>
 
           <div class="countdown-celebration-card" id="mainCelebrateCard" hidden>
-            <span class="script-celebrate" data-cfg="coupleNames">Mostafa &amp; Basmala</span>
+            <span class="script-celebrate" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</span>
             <h3 data-i18n="cdArrivedTitle">Our Wedding Celebration Has Arrived!</h3>
             <p data-i18n="cdArrivedSub">Thank you for sharing the joy, blessings, and unforgettable beauty of our special day.</p>
           </div>
@@ -625,11 +643,11 @@
           <p class="finale-arabic-closing" lang="ar" dir="rtl">
             نتطلع بشوق للقائكم ومشاركتنا فرحة العمر.
           </p>
-          <h2 class="finale-signature" data-cfg="coupleNames">Mostafa &amp; Basmala</h2>
+          <h2 class="finale-signature" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</h2>
           <p class="finale-date-foot" data-cfg="dateUpper">SATURDAY, AUGUST 21, 2027</p>
 
           <div class="finale-footer-bar">
-            <button class="text-gold-link" id="btnFinaleReplay" type="button" data-i18n="watchEnvelopeAgain">
+            <button class="btn-couture-outline btn-finale-replay" id="btnFinaleReplay" type="button" data-i18n="watchEnvelopeAgain">
               Replay Envelope Opening
             </button>
           </div>
@@ -641,6 +659,6 @@
   <!-- Champagne Toast Feedback -->
   <div class="inv-toast" id="invToast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

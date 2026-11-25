@@ -20,6 +20,8 @@
     couplePhoto: "assets/couple-portrait.jpg",
 
     en: {
+      coupleNames: "Mostafa & Basmala",
+      pageTitle: "Mostafa & Basmala — Wedding Invitation",
       dateUpper: "SATURDAY, AUGUST 21, 2027",
       dateShort: "AUGUST 21, 2027",
       dateDisplay: "Saturday, August 21, 2027",
@@ -34,6 +36,8 @@
       sched3Time: "9:30 PM"
     },
     ar: {
+      coupleNames: "مصطفى وبسملة",
+      pageTitle: "مصطفى وبسملة — دعوة زفاف",
       dateUpper: "السبت، ٢١ أغسطس ٢٠٢٧",
       dateShort: "٢١ أغسطس ٢٠٢٧",
       dateDisplay: "السبت، ٢١ أغسطس ٢٠٢٧",
@@ -97,10 +101,11 @@
      ======================================================================== */
   function applyWeddingConfig() {
     const loc = WEDDING_CONFIG[currentLang] || WEDDING_CONFIG.en;
+    if (loc.pageTitle) document.title = loc.pageTitle;
     document.querySelectorAll("[data-cfg]").forEach(function (el) {
       const key = el.dataset.cfg;
-      if (key === "coupleNames") el.textContent = WEDDING_CONFIG.coupleNames;
-      else if (loc[key]) el.textContent = loc[key];
+      if (loc[key]) el.textContent = loc[key];
+      else if (key === "coupleNames") el.textContent = WEDDING_CONFIG.coupleNames;
     });
     document.querySelectorAll("[data-cfg-src]").forEach(function (img) {
       const key = img.dataset.cfgSrc;
@@ -224,6 +229,12 @@
     return String(Math.max(0, Math.floor(num))).padStart(2, "0");
   }
 
+  function toDisplayDigits(str) {
+    if (currentLang !== "ar") return str;
+    const ar = "٠١٢٣٤٥٦٧٨٩";
+    return String(str).replace(/\d/g, function (d) { return ar[Number(d)]; });
+  }
+
   let lastSecondValue = null;
 
   function updateCountdown() {
@@ -249,10 +260,10 @@
     const seconds = totalSeconds % 60;
 
     const values = {
-      days: String(days),
-      hours: pad2(hours),
-      minutes: pad2(minutes),
-      seconds: pad2(seconds)
+      days: toDisplayDigits(String(days)),
+      hours: toDisplayDigits(pad2(hours)),
+      minutes: toDisplayDigits(pad2(minutes)),
+      seconds: toDisplayDigits(pad2(seconds))
     };
 
     document.querySelectorAll("[data-cd]").forEach(function (el) {
@@ -369,7 +380,7 @@
       const status = entry.attendance === "attending"
         ? "تأكيد الحضور بكل سرور (" + entry.guests + " " + (entry.guests === 1 ? "ضيف" : "ضيوف") + ")"
         : "الاعتذار مع خالص التمنيات السعيدة";
-      return "تأكيد حضور زفاف " + WEDDING_CONFIG.coupleNames + "\n"
+      return "تأكيد حضور زفاف " + WEDDING_CONFIG.ar.coupleNames + "\n"
         + "الاسم: " + entry.name + "\n"
         + "الرد: " + status
         + (entry.note ? "\nرسالة للعروسين: " + entry.note : "");
@@ -488,6 +499,7 @@
   const I18N = {
     en: {
       entranceWhisper: "YOU ARE CORDIALLY INVITED",
+      flapLabel: "WEDDING INVITATION",
       tapToOpen: "Tap the Gold Seal to Open",
       navCover: "Invitation Card",
       navWelcome: "Welcome",
@@ -559,6 +571,7 @@
     },
     ar: {
       entranceWhisper: "نتشرف بدعوتكم لحضور حفل الزفاف",
+      flapLabel: "دعوة زفاف",
       tapToOpen: "اضغط على الختم الذهبي لفتح الدعوة",
       navCover: "بطاقة الدعوة",
       navWelcome: "الترحيب",
@@ -577,7 +590,7 @@
       welcomeNote: "أمسية حالمة تجمع الأهل والأحبة لنبدأ معًا أجمل فصول حياتنا، ويزداد يومنا بهاءً وبهجة بحضوركم الغالي.",
       watchEnvelopeAgain: "إعادة فتح الظرف",
       portraitEyebrow: "بداية العمر معًا",
-      portraitHeading: "قلبان جمعهما القدر،<br><em>ووعدٌ يمتد للأبد</em>",
+      portraitHeading: "قلبان جمعهما القدر،<br><em>ووعد يمتد للأبد</em>",
       portraitCopy: "وسط دفء العائلة وأقرب الأحباء، نحتفل ببداية حكاية كُتبت بالمودة والسكينة. صُمّمت كل تفصيلة في هذه الليلة بحب لتكون ذكرى لا تُنسى بحضوركم.",
       ringsCaption: "برفقة العائلتين — ٢١ أغسطس ٢٠٢٧",
       cdEyebrow: "نعدّ اللحظات شوقًا",
@@ -654,6 +667,7 @@
     });
 
     applyWeddingConfig();
+    updateCountdown();
     if (lastSavedRsvp && rsvpConfirmation && !rsvpConfirmation.hidden) {
       renderRsvpConfirmation(lastSavedRsvp);
     }
