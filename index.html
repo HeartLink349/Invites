@@ -3,143 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#E8D7BE">
+  <meta name="theme-color" content="#140C0E">
   <title>Mostafa &amp; Basmala — Wedding Invitation</title>
-  <meta name="description" content="Together with their families, Mostafa &amp; Basmala invite you to join them in celebrating their marriage. Tap the gold wax seal to open the wedding invitation.">
+  <meta name="description" content="Together with their families, Mostafa &amp; Basmala invite you to join them in celebrating their marriage.">
   <meta property="og:title" content="Mostafa &amp; Basmala — A Celebration of Love">
-  <meta property="og:description" content="Tap the gold wax seal to open our interactive wedding invitation.">
+  <meta property="og:description" content="من أول حكايتنا لحد أجمل يوم في عمرنا، حبينا نشارككم فرحتنا ونخليكم جزء من أجمل لحظاتنا. وجودكم هيكمل فرحتنا.">
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Aref+Ruqaa:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@400;500;600&family=Great+Vibes&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body class="is-envelope-locked">
   <!-- =====================================================================
-       ACT I: FULL-SCREEN INTERACTIVE SEALED CHAMPAGNE ENVELOPE ENTRANCE
-       (The real guest experience — tap the gold wax seal to unseal & open!)
+       ACT I: CINEMATIC FULL-SCREEN VIDEO COVER WITH iOS LIQUID-GLASS CTA
        ===================================================================== -->
   <section
-    class="envelope-entrance"
+    class="video-cover-entrance"
     id="envelopeEntrance"
     data-state="closed"
-    aria-label="Mostafa and Basmala Sealed Wedding Envelope"
+    aria-label="Mostafa and Basmala Wedding Video Cover"
   >
-    <!-- Sunlit Blush & Champagne Studio Wall -->
-    <div class="entrance-bg" aria-hidden="true"></div>
-    <img class="entrance-floral entrance-floral--tl" src="assets/babys-breath-corner.png" alt="" aria-hidden="true">
-    <img class="entrance-floral entrance-floral--br" src="assets/babys-breath-corner.png" alt="" aria-hidden="true">
+    <!-- Ambient Blurred Cinema Backlight for Widescreen Desktop -->
+    <video
+      class="cover-video-ambient"
+      id="coverVideoAmbient"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+      aria-hidden="true"
+    >
+      <source src="assets/cover-video.mp4" type="video/mp4">
+    </video>
 
-    <!-- Subtle Corner Language Switcher Available Even Before Opening -->
-    <div class="entrance-top-bar">
-      <button class="inv-lang-btn" id="btnEntranceLang" type="button" aria-label="Switch Language">عربي</button>
+    <!-- Primary Hero Original Wedding Video (Full-Bleed Mobile + Cinema Center Desktop) -->
+    <div class="cover-video-stage" aria-hidden="true">
+      <video
+        class="cover-video-hero"
+        id="coverVideoHero"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+      >
+        <source src="assets/cover-video.mp4" type="video/mp4">
+      </video>
     </div>
 
-    <!-- Tactile Full-Experience Embossed Champagne Envelope -->
-    <div class="envelope-stage-wrap">
-      <p class="entrance-whisper" data-i18n="entranceWhisper">YOU ARE CORDIALLY INVITED</p>
+    <!-- Subtle Editorial Chiaroscuro Scrim (keeps video bright & text razor-clear) -->
+    <div class="cover-video-scrim" aria-hidden="true"></div>
 
-      <div class="real-envelope" id="realEnvelope">
-        <!-- Warm Champagne Inner Cavity Lining -->
-        <div class="env-cavity" aria-hidden="true"></div>
+    <!-- Discreet Top-Corner Language Toggle -->
+    <div class="entrance-top-bar">
+      <button class="glass-lang-pill" id="btnEntranceLang" type="button" aria-label="Switch Language">عربي</button>
+    </div>
 
-        <!-- Printed Ivory Cotton Card Rising Out When Opened -->
-        <div class="env-inner-card" aria-hidden="true">
-          <div class="env-inner-card-frame">
-            <span class="inner-card-kicker" data-i18n="cardKicker">TOGETHER WITH THEIR FAMILIES</span>
-            <span class="inner-card-script" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</span>
-            <span class="inner-card-rule"></span>
-            <span class="inner-card-date" data-cfg="dateShort">AUGUST 21, 2027</span>
-            <span class="inner-card-venue" data-cfg="venueName">Royal Palace Hall</span>
-          </div>
-        </div>
+    <!-- Cinematic Overlay Content: Script Couple Names, Romantic Message & iOS Glass CTA -->
+    <div class="video-cover-content">
+      <h1 class="video-couple-script" translate="no">Mostafa &amp; Basmala</h1>
 
-        <!-- Couture Inner Antique-Gold Hairline Border Frame -->
-        <div class="env-gold-border" aria-hidden="true"></div>
+      <span class="video-gold-rule" aria-hidden="true"></span>
 
-        <!-- Crisp Embossed Champagne Diagonal Paper Flaps -->
-        <div class="env-flap env-flap--left" aria-hidden="true"></div>
-        <div class="env-flap env-flap--right" aria-hidden="true"></div>
-        <div class="env-flap env-flap--bottom" aria-hidden="true"></div>
+      <p class="video-romantic-message" lang="ar" dir="rtl">
+        من أول حكايتنا لحد أجمل يوم في عمرنا، حبينا نشارككم فرحتنا ونخليكم جزء من أجمل لحظاتنا. وجودكم هيكمل فرحتنا.
+      </p>
 
-        <!-- Delicate Baby's Breath Sprig + Burgundy Rose Accent Over Lower-Left Fold -->
-        <img class="env-sprig" src="assets/babys-breath-corner.png" alt="" aria-hidden="true">
-        <img class="env-rose-accent" src="assets/burgundy-rose-corner.png" alt="" aria-hidden="true">
-
-        <!-- 3D Animated Top Triangular Embossed Flap with Gilded Edge & Embossed Monogram -->
-        <div class="env-top-hinge" id="envTopHinge">
-          <div class="env-top-face env-top-front">
-            <svg class="flap-gilded-edge" viewBox="0 0 1000 500" preserveAspectRatio="none" fill="none" aria-hidden="true">
-              <polyline points="0,0 500,482 1000,0" stroke="#FFF9EE" stroke-opacity="0.82" stroke-width="4"/>
-              <polyline points="22,0 500,462 978,0" stroke="#B69A70" stroke-opacity="0.72" stroke-width="1.8"/>
-              <polyline points="36,0 500,448 964,0" stroke="#B69A70" stroke-opacity="0.34" stroke-width="1"/>
-            </svg>
-            <div class="flap-embossed-crest">
-              <span class="flap-crest-label" data-i18n="flapLabel">WEDDING INVITATION</span>
-              <span class="flap-crest-script" data-cfg="coupleNames" translate="no">Mostafa &amp; Basmala</span>
-            </div>
-          </div>
-          <div class="env-top-face env-top-back"></div>
-        </div>
-
-        <!-- Sculpted Metallic Antique-Gold Wax Seal with Intertwined Hearts -->
-        <button
-          class="wax-seal-trigger"
-          id="goldWaxSeal"
-          type="button"
-          aria-label="Tap gold wax seal to open Mostafa and Basmala wedding invitation"
-        >
-          <span class="seal-aura" aria-hidden="true"></span>
-          <svg class="wax-seal-svg" viewBox="0 0 180 180" fill="none" aria-hidden="true">
-            <defs>
-              <radialGradient id="waxGoldOuter" cx="34%" cy="28%" r="72%">
-                <stop offset="0%" stop-color="#F2DBA9"/>
-                <stop offset="28%" stop-color="#CEA86D"/>
-                <stop offset="68%" stop-color="#9B7643"/>
-                <stop offset="100%" stop-color="#694922"/>
-              </radialGradient>
-              <radialGradient id="waxGoldInner" cx="38%" cy="32%" r="68%">
-                <stop offset="0%" stop-color="#E2C48E"/>
-                <stop offset="46%" stop-color="#B79057"/>
-                <stop offset="86%" stop-color="#866234"/>
-                <stop offset="100%" stop-color="#6B4A22"/>
-              </radialGradient>
-              <linearGradient id="waxSpecular" x1="15%" y1="10%" x2="82%" y2="88%">
-                <stop offset="0%" stop-color="#FFF8E5" stop-opacity="0.74"/>
-                <stop offset="42%" stop-color="#E8CA94" stop-opacity="0.16"/>
-                <stop offset="100%" stop-color="#4A3214" stop-opacity="0.45"/>
-              </linearGradient>
-              <filter id="sealDrop" x="-20%" y="-20%" width="145%" height="145%">
-                <feDropShadow dx="2" dy="10" stdDeviation="7" flood-color="#4F351F" flood-opacity="0.52"/>
-              </filter>
-              <filter id="embossRelief" x="-15%" y="-15%" width="130%" height="130%">
-                <feDropShadow dx="-1" dy="-1" stdDeviation="0.8" flood-color="#FFF3D4" flood-opacity="0.74"/>
-                <feDropShadow dx="1.5" dy="2" stdDeviation="1.2" flood-color="#4B3113" flood-opacity="0.8"/>
-              </filter>
-            </defs>
-
-            <g filter="url(#sealDrop)">
-              <path d="M90 12 C112 10, 134 17, 150 32 C164 46, 170 67, 168 89 C166 112, 160 135, 143 151 C126 166, 102 170, 80 167 C56 164, 34 156, 22 136 C10 116, 11 88, 17 65 C23 42, 37 24, 58 17 C68 13, 79 13, 90 12 Z" fill="url(#waxGoldOuter)"/>
-              <path d="M90 18 C110 16, 130 22, 144 36 C157 49, 162 68, 161 88 C159 109, 153 130, 138 144 C123 158, 101 162, 81 160 C59 157, 40 149, 29 132 C18 114, 19 88, 24 67 C29 47, 42 30, 61 23 C70 19, 80 19, 90 18 Z" fill="none" stroke="url(#waxSpecular)" stroke-width="5.5"/>
-            </g>
-
-            <circle cx="90" cy="90" r="56" fill="url(#waxGoldInner)" stroke="#725126" stroke-width="2.2"/>
-            <circle cx="90" cy="90" r="51.5" fill="none" stroke="#F6E2B8" stroke-opacity="0.52" stroke-width="1.2"/>
-
-            <!-- Embossed Intertwined Double Hearts Emblem -->
-            <g filter="url(#embossRelief)" stroke="#5E401B" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
-              <path d="M84 118 C64 103, 52 88, 54 73 C56 61, 68 56, 78 63 C82 66, 85 71, 87 76 C90 69, 97 64, 105 66 C115 69, 119 80, 113 91 C106 103, 94 111, 84 118 Z"/>
-              <path d="M96 121 C116 107, 128 93, 126 78 C124 66, 113 61, 103 68 C99 71, 96 76, 94 81 C90 73, 82 69, 75 72 C66 76, 63 87, 70 97 C77 107, 87 114, 96 121 Z" stroke-width="2.6"/>
-              <path d="M77 92 C82 84, 96 84, 102 92 C95 101, 83 101, 77 92 Z" stroke-width="1.8" stroke-opacity="0.85"/>
-            </g>
-          </svg>
-        </button>
-
-        <!-- Tactile Invitation Open Cue -->
-        <button class="envelope-open-cue" id="btnOpenCue" type="button" data-i18n="tapToOpen">
-          Tap the Gold Seal to Open
-        </button>
-      </div>
+      <button
+        class="ios-glass-cta"
+        id="btnOpenInvitation"
+        type="button"
+        dir="rtl"
+        aria-label="فتح الدعوة"
+      >
+        <span class="ios-glass-sheen" aria-hidden="true"></span>
+        <span class="ios-glass-label">فتح الدعوة</span>
+        <svg class="ios-glass-arrow" viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15.5 10H4.5"/>
+          <path d="M9.5 5L4.5 10L9.5 15"/>
+        </svg>
+      </button>
     </div>
   </section>
 
@@ -166,7 +111,7 @@
 
         <div class="inv-header-actions">
           <button class="inv-seal-replay-chip" id="btnHeaderReplay" type="button" data-i18n="btnReplayShort">
-            Envelope
+            Cover
           </button>
           <button class="inv-lang-btn" id="btnInvLang" type="button" aria-label="Switch Language">عربي</button>
           <button class="inv-menu-btn" id="btnInvMenu" type="button" aria-label="Toggle Menu" aria-expanded="false">
@@ -183,7 +128,7 @@
         <a href="#details" data-i18n="navDetails">Details</a>
         <a href="#location" data-i18n="navLocation">Location</a>
         <a href="#rsvp" data-i18n="navRsvp">RSVP</a>
-        <button class="drawer-replay-btn" id="btnDrawerReplay" type="button" data-i18n="watchEnvelopeAgain">Replay Envelope Opening</button>
+        <button class="drawer-replay-btn" id="btnDrawerReplay" type="button" data-i18n="watchEnvelopeAgain">Replay Cover Video</button>
       </div>
     </header>
 
@@ -648,7 +593,7 @@
 
           <div class="finale-footer-bar">
             <button class="btn-couture-outline btn-finale-replay" id="btnFinaleReplay" type="button" data-i18n="watchEnvelopeAgain">
-              Replay Envelope Opening
+              Replay Cover Video
             </button>
           </div>
         </div>
@@ -659,6 +604,6 @@
   <!-- Champagne Toast Feedback -->
   <div class="inv-toast" id="invToast" role="status" aria-live="polite" hidden></div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

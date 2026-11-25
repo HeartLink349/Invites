@@ -116,12 +116,13 @@
   }
 
   /* ========================================================================
-     4. FULL-SCREEN 5-STEP 3D ENVELOPE OPENING & REPLAY CHOREOGRAPHY
+     4. CINEMATIC VIDEO COVER TRANSITION & REPLAY
      ======================================================================== */
   const envelopeEntrance = document.getElementById("envelopeEntrance");
   const invitationExperience = document.getElementById("invitationExperience");
-  const goldWaxSeal = document.getElementById("goldWaxSeal");
-  const btnOpenCue = document.getElementById("btnOpenCue");
+  const btnOpenInvitation = document.getElementById("btnOpenInvitation");
+  const coverVideoHero = document.getElementById("coverVideoHero");
+  const coverVideoAmbient = document.getElementById("coverVideoAmbient");
   const btnHeaderReplay = document.getElementById("btnHeaderReplay");
   const btnDrawerReplay = document.getElementById("btnDrawerReplay");
   const btnFinaleReplay = document.getElementById("btnFinaleReplay");
@@ -131,42 +132,42 @@
     envelopeTimers = [];
   }
 
-  function openEnvelope() {
+  function ensureCoverVideosPlay() {
+    [coverVideoHero, coverVideoAmbient].forEach(function (vid) {
+      if (!vid) return;
+      vid.muted = true;
+      const p = vid.play();
+      if (p && typeof p.catch === "function") p.catch(function () {});
+    });
+  }
+
+  function pauseCoverVideos() {
+    [coverVideoHero, coverVideoAmbient].forEach(function (vid) {
+      if (vid && !vid.paused) vid.pause();
+    });
+  }
+
+  function openInvitationCover() {
     if (!envelopeEntrance) return;
     if (envelopeEntrance.dataset.state !== "closed") return;
     clearTimers();
 
-    // 1. Gold wax seal smoothly tilts, lifts & unseals
-    envelopeEntrance.dataset.state = "unsealing";
+    // Smooth cinematic cross-dissolve into the existing inner invitation
+    window.scrollTo({ top: 0, behavior: "instant" });
+    envelopeEntrance.dataset.state = "exiting";
+    document.body.classList.remove("is-envelope-locked");
+    if (invitationExperience) {
+      invitationExperience.classList.add("is-revealed");
+      invitationExperience.setAttribute("aria-hidden", "false");
+    }
 
-    // 2. Top embossed triangular flap rotates open in 3D
-    envelopeTimers.push(setTimeout(function () {
-      envelopeEntrance.dataset.state = "opening";
-    }, 360));
-
-    // 3. Ivory cotton invitation card glides upward out of envelope pocket
-    envelopeTimers.push(setTimeout(function () {
-      envelopeEntrance.dataset.state = "rising";
-    }, 980));
-
-    // 4. Envelope cross-dissolves into the full interactive invitation experience
-    envelopeTimers.push(setTimeout(function () {
-      window.scrollTo({ top: 0, behavior: "instant" });
-      envelopeEntrance.dataset.state = "exiting";
-      document.body.classList.remove("is-envelope-locked");
-      if (invitationExperience) {
-        invitationExperience.classList.add("is-revealed");
-        invitationExperience.setAttribute("aria-hidden", "false");
-      }
-    }, 1820));
-
-    // 5. Hide overlay completely after exit fade completes
     envelopeTimers.push(setTimeout(function () {
       envelopeEntrance.dataset.state = "hidden";
-    }, 2560));
+      pauseCoverVideos();
+    }, 900));
   }
 
-  function replayEnvelope() {
+  function replayCover() {
     clearTimers();
     const drawer = document.getElementById("invMobileDrawer");
     const menuBtn = document.getElementById("btnInvMenu");
@@ -182,13 +183,14 @@
     if (envelopeEntrance) {
       envelopeEntrance.dataset.state = "closed";
     }
+    ensureCoverVideosPlay();
   }
 
-  if (goldWaxSeal) goldWaxSeal.addEventListener("click", openEnvelope);
-  if (btnOpenCue) btnOpenCue.addEventListener("click", openEnvelope);
-  if (btnHeaderReplay) btnHeaderReplay.addEventListener("click", replayEnvelope);
-  if (btnDrawerReplay) btnDrawerReplay.addEventListener("click", replayEnvelope);
-  if (btnFinaleReplay) btnFinaleReplay.addEventListener("click", replayEnvelope);
+  ensureCoverVideosPlay();
+  if (btnOpenInvitation) btnOpenInvitation.addEventListener("click", openInvitationCover);
+  if (btnHeaderReplay) btnHeaderReplay.addEventListener("click", replayCover);
+  if (btnDrawerReplay) btnDrawerReplay.addEventListener("click", replayCover);
+  if (btnFinaleReplay) btnFinaleReplay.addEventListener("click", replayCover);
 
   /* ========================================================================
      5. HEADER SCROLL & MOBILE DRAWER
@@ -508,7 +510,7 @@
       navDetails: "Details",
       navLocation: "Location",
       navRsvp: "RSVP",
-      btnReplayShort: "Envelope",
+      btnReplayShort: "Cover",
       cardKicker: "TOGETHER WITH THEIR FAMILIES",
       cardInviteLine: "INVITE YOU TO JOIN THEM IN CELEBRATING THEIR MARRIAGE",
       btnHeroRsvp: "Confirm Attendance",
@@ -516,7 +518,7 @@
       welcomeEyebrow: "WITH BLESSINGS & JOY",
       welcomeSub: "A Celebration of Love",
       welcomeNote: "The beginning of a cherished chapter — an evening of timeless elegance, heartfelt prayers, and warm celebration we would be deeply honored to share with you.",
-      watchEnvelopeAgain: "Replay Envelope Opening",
+      watchEnvelopeAgain: "Replay Cover Video",
       portraitEyebrow: "OUR FOREVER BEGINS",
       portraitHeading: "Two Hearts,<br><em>One Timeless Promise</em>",
       portraitCopy: "Surrounded by the warmth of our families and dearest loved ones, we gather to celebrate a union written with grace, gratitude, and quiet beauty. Every detail of this evening has been lovingly prepared for your presence.",
@@ -580,7 +582,7 @@
       navDetails: "التفاصيل",
       navLocation: "الموقع",
       navRsvp: "تأكيد الحضور",
-      btnReplayShort: "الظرف",
+      btnReplayShort: "الغلاف",
       cardKicker: "برفقة عائلتيهما الكريمتين",
       cardInviteLine: "يتشرفان بدعوتكم لمشاركتهما فرحة الزفاف",
       btnHeroRsvp: "تأكيد الحضور",
@@ -588,7 +590,7 @@
       welcomeEyebrow: "بكل الحب والامتنان",
       welcomeSub: "احتفال يجمع قلوبنا معكم",
       welcomeNote: "أمسية حالمة تجمع الأهل والأحبة لنبدأ معًا أجمل فصول حياتنا، ويزداد يومنا بهاءً وبهجة بحضوركم الغالي.",
-      watchEnvelopeAgain: "إعادة فتح الظرف",
+      watchEnvelopeAgain: "إعادة عرض فيديو الغلاف",
       portraitEyebrow: "بداية العمر معًا",
       portraitHeading: "قلبان جمعهما القدر،<br><em>ووعد يمتد للأبد</em>",
       portraitCopy: "وسط دفء العائلة وأقرب الأحباء، نحتفل ببداية حكاية كُتبت بالمودة والسكينة. صُمّمت كل تفصيلة في هذه الليلة بحب لتكون ذكرى لا تُنسى بحضوركم.",
